@@ -13,7 +13,7 @@ class Route:
         self.method = method
         self.handler = handler
     
-    def check(self, request_path) -> bool:
+    def check(self, request_path) -> tuple[bool, list]:
         arguments = []
         path_parts = [i for i in self.path.split('/') if i != ""]
         request_parts = [i for i in request_path.split('/') if i != ""]
@@ -34,10 +34,13 @@ class Route:
     
     def __call__(self, request: 'Request', *args, **kwargs):
         print("__call__, args: ", args, kwargs)
+        print("-> args:", len(args), "co_argcount", self.handler.__code__.co_argcount)
         if self.handler.__code__.co_argcount == 1:
             return self.handler(request)
         elif self.handler.__code__.co_argcount == 2:
             return self.handler(request, args[0])
+        elif self.handler.__code__.co_argcount == len(args) +1:
+            return self.handler(request, *args)
         else:
             raise Exception("Too many arguments in handler function.")
     

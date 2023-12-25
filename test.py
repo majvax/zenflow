@@ -16,6 +16,8 @@ def test(request: zenflow.Request):
 def api(request: zenflow.Request, user_id):
     return f"HTTP/1.1 200 OK\n\n<h1>Hello, {user_id}</h1>"
 
-
+@server.route("/users/<?>/<?>", ["GET"])
+def users(request: zenflow.Request, username, message):
+    return f"HTTP/1.1 200 OK\n\n<h1>Profile of {username}, message:{message}</h1>"
 
 server.start()
