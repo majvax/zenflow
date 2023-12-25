@@ -1,5 +1,4 @@
-from dataclasses import dataclass
-from typing import Literal, List
+from typing import Literal, List, Callable
 import socket
 
 
@@ -8,7 +7,7 @@ STATUS_CODES = Literal['200 OK', '404 Not Found', '500 Internal Server Error']
 
 
 class Route:
-    def __init__(self, path: str, method: List[REQUEST_TYPES], handler: callable):
+    def __init__(self, path: str, method: List[REQUEST_TYPES], handler: Callable):
         self.path = path
         self.method = method
         self.handler = handler
@@ -37,13 +36,11 @@ class Route:
         print("-> args:", len(args), "co_argcount", self.handler.__code__.co_argcount)
         if self.handler.__code__.co_argcount == 1:
             return self.handler(request)
-        elif self.handler.__code__.co_argcount == 2:
-            return self.handler(request, args[0])
-        elif self.handler.__code__.co_argcount == len(args) +1:
+        elif self.handler.__code__.co_argcount == len(args) + 1:
             return self.handler(request, *args)
         else:
             raise Exception("Too many arguments in handler function.")
-    
+   
     
 
 class Request:
