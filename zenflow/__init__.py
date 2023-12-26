@@ -68,7 +68,7 @@ class Request:
         return self._url
     
     @property
-    def method(self) -> REQUEST_TYPES:
+    def method(self) -> str:
         return self._method
     
     @property
@@ -76,10 +76,10 @@ class Request:
         return self._version
     
     def __repr__(self) -> str:
-        return f"<Request {self.type} {self.url} {self.version}>"
+        return f"<Request {self.method} {self.url} {self.version}>"
     
     def __str__(self) -> str:
-        return f"<Request {self.type} {self.url} {self.version}>"
+        return f"<Request {self.method} {self.url} {self.version}>"
     
     def __getitem__(self, key) -> str:
         return self.header[key]
@@ -140,7 +140,7 @@ class Server:
             
         return "HTTP/1.1 404 Not Found\n\n404 Not Found"
 
-    def route(self, path: str, method: List[REQUEST_TYPES] = None):
+    def route(self, path: str, method: List[REQUEST_TYPES] | None = None):
         if method is None:
             method = ['GET']
         
