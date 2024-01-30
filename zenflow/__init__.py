@@ -1,13 +1,12 @@
-from typing import Literal, List, Callable
+from typing import List, Callable
+from .const import HTTP_METHODS, STATUS_CODES
+from .request import Request
+from .response import Response
 import socket
 
 
-REQUEST_TYPES = Literal['GET', 'POST', 'PUT', 'DELETE']
-STATUS_CODES = Literal['200 OK', '404 Not Found', '500 Internal Server Error']
-
-
 class Route:
-    def __init__(self, path: str, method: List[REQUEST_TYPES], handler: Callable):
+    def __init__(self, path: str, method: List[HTTP_METHODS], handler: Callable):
         self.path = path
         self.method = method
         self.handler = handler
@@ -40,49 +39,10 @@ class Route:
             return self.handler(request, *args)
         else:
             raise Exception("Too many arguments in handler function.")
-   
-    
-
-class Request:
-    def __init__(self, request: str):
-        self._header, self._url, self._method, self._version = self.parse_request(request)
         
-    @staticmethod
-    def parse_request(request: str):
-        lst = request.replace("\r", "").split('\n')
-        html = lst[0].split(' ')
-        header = lst[1:]
-        url = html[1]
-        method = html[0]
-        version = html[2]
-        
-        header = {i.split(": ")[0]: i.split(": ")[1] for i in header if i != "" and ": " in i}
-        return header, url, method, version
-    
-    @property
-    def header(self) -> dict:
-        return self._header
-    
-    @property
-    def url(self) -> str:
-        return self._url
-    
-    @property
-    def method(self) -> str:
-        return self._method
-    
-    @property
-    def version(self) -> str:
-        return self._version
-    
     def __repr__(self) -> str:
-        return f"<Request {self.method} {self.url} {self.version}>"
-    
-    def __str__(self) -> str:
-        return f"<Request {self.method} {self.url} {self.version}>"
-    
-    def __getitem__(self, key) -> str:
-        return self.header[key]
+        return f"<Route {self.method} {self.path} {self.handler}>"
+   
         
 
 
@@ -111,14 +71,14 @@ class Server:
                 with conn:
                     request = Request(conn.recv(1024).decode('utf-8'))
                     response = self.route_request(request)
-                    conn.sendall(response.encode('utf-8'))
+                    conn.sendall(str(response).encode('utf-8'))
         except KeyboardInterrupt:
             print("Keyboard Interrupt received, stopping server.")
         finally:
             self.stop()
 
 
-    def route_request(self, request: Request):
+    def route_request(self, request: Request) -> Response:
         # Match the paroutes = {}  # Global dictionary to store routes and their handlers
 
         for route in self.routes:
@@ -132,15 +92,20 @@ class Server:
                 if isinstance(response, Template):
                     path, status = response.render()
                     with open(path, 'r') as f:
-                        return f"HTTP/1.1 {status}\n\n{f.read()}"
-                return response
+                        return Response("200 OK", body=f.read())
+                elif isinstance(response, Response):
+                    return response
+                elif isinstance(response, str):
+                    return Response("200 OK", body=response)
+                else:
+                    return Response("200 OK", body=str(response))
             except Exception as e:
                 print(e)
-                return "HTTP/1.1 500 Internal Server Error\n\n500 Internal Server Error"
+                return Response("500 Internal Server Error", body="500 Internal Server Error")
             
-        return "HTTP/1.1 404 Not Found\n\n404 Not Found"
+        return Response("404 Not Found", body="404 Not Found")
 
-    def route(self, path: str, method: List[REQUEST_TYPES] | None = None):
+    def route(self, path: str, method: List[HTTP_METHODS] | None = None):
         if method is None:
             method = ['GET']
         
